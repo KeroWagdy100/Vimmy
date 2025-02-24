@@ -32,6 +32,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->editor, &VimTextEdit::countChanged,
             ui->count, &QLabel::setText);
+
+    connect(ui->editor, &VimTextEdit::commandChanged,
+            ui->command, &QLabel::setText);
 }
 
 MainWindow::~MainWindow()

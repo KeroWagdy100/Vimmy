@@ -94,12 +94,12 @@ private:
     inline bool visualLineMode() const {return m_mode == Mode::VISUAL_LINE;}
     inline bool visualBlockMode() const {return m_mode == Mode::VISUAL_BLOCK;}
 
-    void moveCursor(QTextCursor::MoveOperation operation);
+    void moveCursor(QTextCursor::MoveOperation operation, QTextCursor::MoveMode mode = QTextCursor::MoveAnchor);
 
     QChar currChar(int offset = 0) const;
 
-    void Move(QKeyCombination key);
-    void change();
+    void Move(QKeyCombination key, QTextCursor::MoveMode mode = QTextCursor::MoveAnchor);
+    void change(QKeyCombination key);
 
 
 
