@@ -4,8 +4,6 @@
 #include <QApplication>
 #include <QDebug>
 #include <QStatusBar>
-#include <QRegularExpression>
-#include <QRegularExpressionMatch>
 #include <QFlags>
 
 #ifdef Q_OS_WIN
@@ -14,6 +12,8 @@
     #include <X11/XKBlib.h>
     #include <X11/Xlib.h>
 #endif
+
+// #define Move Move
 
 
 
@@ -45,6 +45,7 @@ void resetCapsLock()
 VimTextEdit::VimTextEdit(QWidget* parent):
  QTextEdit(parent)
 {
+
     // setting font
     setFontFamily("Cascadia Code");
     setFontPointSize(14);
@@ -56,130 +57,157 @@ VimTextEdit::VimTextEdit(QWidget* parent):
     updateMode(NORMAL);
 }
 
-void VimTextEdit::keyPressEvent(QKeyEvent* event)
+void VimTextEdit::Move(QKeyCombination key)
 {
-    auto key = event->key();
-    auto text = event->text();
-    auto modifiers = event->modifiers();
+    static const QHash<QKeyCombination, QTextCursor::MoveOperation> keyToMoveDir = {
+        {Qt::Key_H, MoveDir::Left},
+        {Qt::Key_J, MoveDir::Down},
+        {Qt::Key_K, MoveDir::Up},
+        {Qt::Key_L, MoveDir::Right},
+        {Qt::Key_W, MoveDir::NextWord}
+    };
 
-    if (key == Qt::Key_CapsLock)
+    // default cases
+    if (keyToMoveDir.contains(key))
     {
-        resetCapsLock(); // reset capslock state
-        updateMode(NORMAL);
+        moveCursor(keyToMoveDir.value(key));
         return;
     }
-    else if (m_mode == INSERT)
+
+    QChar currCh = currChar(), nextCh = currChar(1);
+    switch (key)
+    {
+        case Qt::Key_E:
+            if ( currCh.isSpace() || currCh.isNull() || nextCh.isSpace() || nextCh.isNull() )
+                moveCursor(MoveDir::NextWord);
+
+            if (nextCh.isNull() || nextCh == '\n')
+                moveCursor(MoveDir::NextWord);
+
+            moveCursor(MoveDir::EndOfWord);
+            moveCursor(MoveDir::Left);
+            break;
+
+        case Qt::Key_B:
+                moveCursor(MoveDir::Left);
+                moveCursor(MoveDir::StartOfWord);
+                break;
+    }
+}
+
+void VimTextEdit::keyPressEvent(QKeyEvent* event)
+{
+    QKeyCombination keys = event->keyCombination();
+    QString textPressed = event->text();
+    // qDebug() << textPressed;
+
+    QChar charPressed = textPressed.isEmpty() ? QChar() : textPressed.at(0);
+    Action action = keyToAction.value(keys);
+
+
+    if (m_mode == Mode::INSERT && action != Navigate)
     {
         QTextEdit::keyPressEvent(event);
         return;
     }
-    
-
-
-    if (key == Qt::Key_V)
+    else if (charPressed.isDigit())
     {
-        if (modifiers & Qt::ControlModifier)
-            updateMode(Mode::VISUAL_BLOCK);
-        else if (modifiers & Qt::ShiftModifier)
-            updateMode(Mode::VISUAL_LINE);
-        else
-            updateMode(Mode::VISUAL);
+        updateCount(charPressed);
         return;
     }
 
-    auto currCursor = textCursor();
-    QChar currCh = currChar(0), nextCh = currChar(1);
-    switch (key)
+    switch (action)
     {
-        // Movements
-        case Qt::Key_H:
-            moveCursor(QTextCursor::MoveOperation::Left);
-            return;
-        case Qt::Key_J:
-            moveCursor(QTextCursor::MoveOperation::Down);
-            return;
-        case Qt::Key_K:
-            moveCursor(QTextCursor::MoveOperation::Up);
-            return;
-        case Qt::Key_L:
-            if (!currCursor.atEnd())
-                moveCursor(QTextCursor::MoveOperation::Right);
-            return;
+        case Action::Move:
+            Move(keys);
+            break;
 
-        case Qt::Key_W:
-            moveCursor(QTextCursor::MoveOperation::NextWord);
-            return;
-        case Qt::Key_E:
-            if ( currCh.isSpace() || currCh.isNull() || nextCh.isSpace() || nextCh.isNull() )
-                moveCursor(QTextCursor::NextWord);
-            if (nextCh.isNull() || nextCh == '\n')
-                moveCursor(QTextCursor::NextWord);
+        case Action::Navigate:
+            resetCapsLock(); // reset capslock state
+            updateMode(Mode::NORMAL);
+            break;
 
-            moveCursor(QTextCursor::MoveOperation::EndOfWord);
-            moveCursor(QTextCursor::Left);
-            return;
-        case Qt::Key_B:
-            // if ()
-            moveCursor(QTextCursor::MoveOperation::Left);
-            moveCursor(QTextCursor::MoveOperation::StartOfWord);
-            return;
-    }
-// sdklfj dklasjf   kladfj
+        case Action::Insert:
+            moveCursor(MoveDir::StartOfLine);
+            updateMode(INSERT);
+            break;
 
-    if (text == "i")
-    {
-        // Insert (on current position)
-        updateMode(INSERT);
-    }
+        case Action::append:
+            moveCursor(MoveDir::Right);
+            updateMode(INSERT);
+            break;
 
-    else if (text == "I")
-    {
-        // Insert (to start of line)
-        moveCursor(QTextCursor::MoveOperation::StartOfLine);
-        updateMode(INSERT);
-    }
-
-    else if (text == "a")
-    {
-        // Append (after current char)
-        moveCursor(QTextCursor::MoveOperation::Right);
-        updateMode(INSERT);
-    }
+        case Action::Append:
+            moveCursor(MoveDir::EndOfLine);
+            updateMode(INSERT);
+            break;
         
-    else if (text == "A")
-    {
-        // Append (to end of line)
-        moveCursor(QTextCursor::MoveOperation::EndOfLine);
-        updateMode(INSERT);
+        case Action::insert:        updateMode(Mode::INSERT);       break;
+        case Action::Visual:        updateMode(Mode::VISUAL);       break;
+        case Action::VisualLine:    updateMode(Mode::VISUAL_LINE);  break;
+        case Action::VisualBlock:   updateMode(Mode::VISUAL_BLOCK); break;
+        
+        case Action::insertLine:
+            moveCursor(MoveDir::EndOfLine);
+            this->insertPlainText("\n");
+            updateMode(INSERT);
+            break;
+
+        case Action::InsertLine:
+            moveCursor(MoveDir::StartOfLine);
+            this->insertPlainText("\n");
+            moveCursor(MoveDir::Up);
+            updateMode(INSERT);
+            break;
+
+        // TODO
+        case Action::Change:
+            change();
+            return;
+        case Action::Delete:
+            
+        default:
+            break;
+
     }
 
-    else if (text == "o")
+    // resetting count after action done
+    if (m_count > 1)
+        updateCount('1');
+}
+
+void VimTextEdit::change()
+{
+    if (visualMode() || visualLineMode() || visualBlockMode())
     {
-        // insert line down
-        moveCursor(QTextCursor::MoveOperation::EndOfLine);
-        this->insertPlainText("\n");
-        // moveCursor(QTextCursor::MoveOperation::Down);
-        updateMode(INSERT);
+        auto tCursor = textCursor();
+        tCursor.movePosition(MoveDir::Right, QTextCursor::KeepAnchor);
+        tCursor.removeSelectedText();
+        updateMode(Mode::INSERT);
+    }
+    else if (normalMode())
+    {
+        updateCommand(Action::Change);
     }
 
-    else if (text == "O")
+}
+
+void VimTextEdit::updateCount(QChar countChar)
+{
+    if (m_count != countChar.digitValue())
     {
-        // insert line up
-        moveCursor(QTextCursor::MoveOperation::StartOfLine);
-        this->insertPlainText("\n");
-        moveCursor(QTextCursor::MoveOperation::Up);
-        updateMode(INSERT);
+        m_count = countChar.digitValue();
+        emit countChanged("count = " + QString(countChar));
     }
+}
 
-
-    // else if (text == "a")
-
-    // else if (text == "A")
-
-    // else if (text == "o")
-
-    // else if (text == "O")
-
+void VimTextEdit::updateCommand(Action command)
+{
+    if (command != m_command)
+    {
+        m_command = command;
+        emit commandChanged(commandAsString(command));
+    }
 }
 
 void VimTextEdit::updateMode(Mode mode)
@@ -193,13 +221,17 @@ void VimTextEdit::updateMode(Mode mode)
     switch (m_mode)
     {
         case Mode::NORMAL:
-            QApplication::setCursorFlashTime(0); // disable cursor blinking
-            moveCursor(QTextCursor::MoveOperation::Left);
+            // disable cursor blinking in normal mode
+            QApplication::setCursorFlashTime(0);
+
+            moveCursor(MoveDir::Left);
             setCursorWidth(CURSOR_WIDTH_NORMAL);
             break;
 
         case Mode::INSERT:
-            QApplication::setCursorFlashTime(cursorFlashTime); // enable cursor blinking
+            // enable cursor blinking in insert mode
+            QApplication::setCursorFlashTime(cursorFlashTime);
+
             setCursorWidth(CURSOR_WIDTH_INSERT);
             break;
 
@@ -211,16 +243,17 @@ void VimTextEdit::updateMode(Mode mode)
     }
 
     
+    // emit mode changed signal
     emit modeChanged("-- " + modeAsString(m_mode) + " --");
 }
 
-void VimTextEdit::moveCursor(QTextCursor::MoveOperation operation, uint count)
+void VimTextEdit::moveCursor(MoveDir operation)
 {
     auto c = textCursor();
     c.movePosition(
         operation,
         (m_mode == VISUAL ? QTextCursor::KeepAnchor : QTextCursor::MoveAnchor),
-        count
+        m_count // TODO: m_count
     );
     setTextCursor(c);
 }
@@ -229,8 +262,6 @@ QString VimTextEdit::modeAsString(Mode mode)
 {
     switch (mode)
     {
-        case Mode::NORMAL:
-            return "NORMAL";
         case Mode::INSERT:
             return "INSERT";
         case Mode::VISUAL:
@@ -244,9 +275,23 @@ QString VimTextEdit::modeAsString(Mode mode)
     }
 }
 
+QString VimTextEdit::commandAsString(Action command)
+{
+    switch (command)
+    {
+        case Action::Delete:
+            return "d";
+        case Action::Change:
+            return "c";
+        default:
+            return "No Command";
+    }
+}
+
+
 
 /**
- * @brief current char that cursor is on
+ * @brief current char that cursor is on (the character which will be deleted if backspace clicked)
  * 
  * @param offset 1 right char, -1 left char, 0 current char (default) and so on..
  * @return QChar 

@@ -15,14 +15,12 @@ MainWindow::MainWindow(QWidget *parent)
     // -------------------
     setWindowTitle("Editor[*]");
 
-    // setting up actions
+    // setting up actions & signals/slots
     // -------------------
     connect(ui->quit, &QAction::triggered, this, &QMainWindow::close);
     connect(ui->save, &QAction::triggered, this, &MainWindow::save);
     connect(ui->search, &QAction::triggered, this, &MainWindow::search);
 
-    // setting up other signals/slots
-    // -------------------
     connect(ui->editor, &QTextEdit::textChanged, this,
             [this] {
                 if (!isWindowModified())
@@ -31,6 +29,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->editor, &VimTextEdit::modeChanged,
             ui->mode, &QLabel::setText);
+
+    connect(ui->editor, &VimTextEdit::countChanged,
+            ui->count, &QLabel::setText);
 }
 
 MainWindow::~MainWindow()
