@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/vimmy-logo.ico</file>
+        <file>resources/vimmy-logo.png</file>
+    </qresource>
+</RCC>

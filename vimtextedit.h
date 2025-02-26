@@ -17,6 +17,7 @@ enum Action
     None = 0,
     Move,   // move operation (hjkl, w, b, e)
     Change, // change operation (Delete + Insert)
+    CharDelete, // delete a char (x)
     Delete, // delete operation
 
     Navigate,    // Change Mode To Normal
@@ -47,7 +48,7 @@ const QHash<QKeyCombination, Action> keyToAction = {
 
     {QKeyCombination(Qt::Key_C), Change},
     {QKeyCombination(Qt::Key_D), Delete},
-    {QKeyCombination(Qt::Key_X), Delete},
+    {QKeyCombination(Qt::Key_X), CharDelete},
 
     // Switching Modes
     {QKeyCombination(Qt::Key_CapsLock), Navigate},
@@ -73,6 +74,8 @@ class VimTextEdit : public QTextEdit
 
 public:
     explicit VimTextEdit(QWidget* parent = nullptr);
+    
+    inline bool isEmpty() const { return toPlainText().isEmpty(); }
 
 signals:
     void modeChanged(const QString& modeStr);
@@ -100,6 +103,7 @@ private:
 
     void Move(QKeyCombination key, QTextCursor::MoveMode mode = QTextCursor::MoveAnchor);
     void change(QKeyCombination key);
+    void Delete(QKeyCombination key);
 
 
 

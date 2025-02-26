@@ -6,17 +6,48 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>633</width>
-    <height>490</height>
+    <width>800</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>resources/vimmy-logo.png</normaloff>resources/vimmy-logo.png</iconset>
+  </property>
+  <property name="iconSize">
+   <size>
+    <width>64</width>
+    <height>64</height>
+   </size>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
     <item>
      <widget class="VimTextEdit" name="editor">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="font">
        <font>
         <family>Cascadia Code</family>
@@ -30,6 +61,12 @@
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="leftMargin">
+       <number>5</number>
+      </property>
+      <property name="rightMargin">
+       <number>5</number>
+      </property>
       <item>
        <widget class="QLabel" name="mode">
         <property name="text">
@@ -66,7 +103,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>633</width>
+     <width>800</width>
      <height>21</height>
     </rect>
    </property>
@@ -74,8 +111,11 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="save"/>
+    <addaction name="newDoc"/>
     <addaction name="open"/>
+    <addaction name="separator"/>
+    <addaction name="save"/>
+    <addaction name="saveAs"/>
     <addaction name="separator"/>
     <addaction name="quit"/>
    </widget>
@@ -90,6 +130,10 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="save">
+   <property name="icon">
+    <iconset>
+     <normaloff>resources/vimmy-logo.ico</normaloff>resources/vimmy-logo.ico</iconset>
+   </property>
    <property name="text">
     <string>&amp;Save</string>
    </property>
@@ -119,6 +163,34 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="newDoc">
+   <property name="text">
+    <string>&amp;New</string>
+   </property>
+   <property name="toolTip">
+    <string>New Document</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="saveAs">
+   <property name="text">
+    <string>Save As</string>
+   </property>
+   <property name="toolTip">
+    <string>Save Document As</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
  </widget>

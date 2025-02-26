@@ -128,12 +128,15 @@ void VimTextEdit::keyPressEvent(QKeyEvent* event)
         case Action::Move:
             if (m_command == Action::Change)
                 change(keys);
+            else if (m_command == Action::Delete)
+                Delete(keys);
             else
                 Move(keys);
             break;
 
         case Action::Navigate:
             resetCapsLock(); // reset capslock state
+            updateCommand(Action::None);
             updateMode(Mode::NORMAL);
             break;
 
@@ -177,8 +180,16 @@ void VimTextEdit::keyPressEvent(QKeyEvent* event)
             else
                 change(keys);
             break;
+
         case Action::Delete:
-            updateCommand(Action::Delete);
+            if (normalMode())
+                updateCommand(Action::Delete);
+            else
+                Delete(keys);
+            break;
+
+        case Action::CharDelete:
+            Delete(Qt::Key_L);
             break;
             
         default:
@@ -197,18 +208,36 @@ void VimTextEdit::keyPressEvent(QKeyEvent* event)
 
 void VimTextEdit::change(QKeyCombination key)
 {
+    // if (normalMode())
+    //     Move(key, QTextCursor::KeepAnchor);
 
+    // auto tCursor = textCursor();
+    // tCursor.movePosition(normalMode() ? MoveDir::Left : MoveDir::Right, QTextCursor::KeepAnchor);
+    // tCursor.removeSelectedText();
+    // setTextCursor(tCursor);
+
+    // updateMode(Mode::INSERT);
+    // updateCommand(Action::None);
+    Delete(key);
+    updateMode(Mode::INSERT);
+}
+
+void VimTextEdit::Delete(QKeyCombination key)
+{
     if (normalMode())
         Move(key, QTextCursor::KeepAnchor);
 
     auto tCursor = textCursor();
-    tCursor.movePosition(normalMode() ? MoveDir::Left : MoveDir::Right, QTextCursor::KeepAnchor);
+    if (!normalMode())
+        tCursor.movePosition(MoveDir::Right, QTextCursor::KeepAnchor);
+    // tCursor.movePosition(normalMode() ? MoveDir::Left : MoveDir::Right, QTextCursor::KeepAnchor);
     tCursor.removeSelectedText();
     setTextCursor(tCursor);
 
-    updateMode(Mode::INSERT);
     updateCommand(Action::None);
+    updateMode(Mode::NORMAL);
 }
+
 
 
 void VimTextEdit::updateCount(QChar countChar)

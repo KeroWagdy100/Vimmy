@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QMessageBox>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -17,12 +18,44 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-private:
-    void save();
-    void search();
+    inline bool isDocumentUntitled() const { return m_filename.isEmpty(); }
+    inline bool isDocumentSaved() const { return m_saved; }
+    bool isDocumentEmpty() const;
 
-    void toggleCapsLock();
+private:
+    void saveDocument();
+    void saveAsDocument();
+    void openDocument();
+    void newDocument();
+    void search();
+    int askToSave();
+    inline void setFilename(const QString& filename)
+    {
+        if (m_filename != filename)
+        {
+            m_filename = filename;
+            setWindowTitle("Vimmy - " + 
+                            (m_filename.isEmpty() ? "untitled" : m_filename) +
+                            "[*]");
+        }
+    }
+
+
+
+    inline void setSavedStatus(bool saved) {
+        if (saved == m_saved)
+            return;
+        m_saved = saved;
+
+        setWindowModified(!m_saved);
+        qDebug() << "isWinModified: " << isWindowModified();
+        // if (!m_saved)
+            // setWindowModified(true);
+    }
+
 private:
     Ui::MainWindow *ui;
+    bool m_saved = true;
+    QString m_filename;
 };
 #endif // MAINWINDOW_H
