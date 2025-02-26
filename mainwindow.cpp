@@ -35,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     // setting up window
     // -------------------
     setWindowTitle("Vimmy - untitled[*]");
+    setIconSize(QSize(64, 64));
     // QMainWindow::setWindowIcon(QIcon("./resources/vimmy-logo.png"));
     // QMainWindow::setIconSize(QSize(64, 64));
 

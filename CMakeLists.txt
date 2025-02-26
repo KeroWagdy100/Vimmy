@@ -19,14 +19,14 @@ set(PROJECT_SOURCES
         mainwindow.h
         mainwindow.ui
         searchdialog.h searchdialog.cpp searchdialog.ui
+        vimtextedit.h vimtextedit.cpp
+        resources/vimmy-logo.ico
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(Editor
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        vimtextedit.h vimtextedit.cpp
-        resources/vimmy-logo.ico
 
 
     )

@@ -13,8 +13,38 @@
     #include <X11/Xlib.h>
 #endif
 
-// #define Move Move
 
+const QHash<QKeyCombination, Action> VimTextEdit::keyToAction = {
+    // Moving
+    {QKeyCombination(Qt::Key_H), Action::Move},
+    {QKeyCombination(Qt::Key_J), Action::Move},
+    {QKeyCombination(Qt::Key_K), Action::Move},
+    {QKeyCombination(Qt::Key_L), Action::Move},
+    {QKeyCombination(Qt::Key_W), Action::Move},
+
+    {QKeyCombination(Qt::Key_B), Action::Move},
+    {QKeyCombination(Qt::Key_E), Action::Move},
+
+    {QKeyCombination(Qt::Key_C), Action::Change},
+    {QKeyCombination(Qt::Key_D), Action::Delete},
+    {QKeyCombination(Qt::Key_X), CharDelete},
+
+    // Switching Modes
+    {QKeyCombination(Qt::Key_CapsLock), Navigate},
+
+    {QKeyCombination(Qt::Key_V), Visual},
+    {QKeyCombination(Qt::Key_V | Qt::ShiftModifier), VisualLine},
+    {QKeyCombination(Qt::Key_V | Qt::ControlModifier), VisualBlock},
+
+    {QKeyCombination(Qt::Key_I), insert},
+    {QKeyCombination(Qt::Key_I | Qt::ShiftModifier), Insert},
+
+    {QKeyCombination(Qt::Key_O), insertLine},
+    {QKeyCombination(Qt::Key_O | Qt::ShiftModifier), InsertLine},
+
+    {QKeyCombination(Qt::Key_A), Action::append},
+    {QKeyCombination(Qt::Key_A | Qt::ShiftModifier), Append}
+};
 
 
 void resetCapsLock()
@@ -70,9 +100,9 @@ MoveDir keyToMoveDir(QKeyCombination key)
     }
 }
 
+
 void VimTextEdit::Move(QKeyCombination key, QTextCursor::MoveMode mode)
 {
-
     auto moveDir = keyToMoveDir(key);
     if (moveDir != MoveDir::NoMove)
     {
@@ -104,12 +134,10 @@ void VimTextEdit::Move(QKeyCombination key, QTextCursor::MoveMode mode)
 void VimTextEdit::keyPressEvent(QKeyEvent* event)
 {
     QKeyCombination keys = event->keyCombination();
-    QString textPressed = event->text();
-    // qDebug() << textPressed;
+    QString textEntered = event->text();
 
-    QChar charPressed = textPressed.isEmpty() ? QChar() : textPressed.at(0);
+    QChar charPressed = textEntered.isEmpty() ? QChar() : textEntered.at(0);
     Action action = keyToAction.value(keys);
-
 
     if (m_mode == Mode::INSERT && action != Navigate)
     {
@@ -121,13 +149,22 @@ void VimTextEdit::keyPressEvent(QKeyEvent* event)
         updateCount(charPressed);
         return;
     }
-    
+    else
+    {
+        executeAction(action, keys);
+        // resetting count after action done
+        if (m_count > 1)
+            updateCount('1');
+    }
+}
 
+void VimTextEdit::executeAction(Action action, QKeyCombination keys)
+{
     switch (action)
     {
         case Action::Move:
             if (m_command == Action::Change)
-                change(keys);
+                Change(keys);
             else if (m_command == Action::Delete)
                 Delete(keys);
             else
@@ -173,12 +210,11 @@ void VimTextEdit::keyPressEvent(QKeyEvent* event)
             updateMode(INSERT);
             break;
 
-        // TODO
         case Action::Change:
             if (normalMode())
                 updateCommand(Action::Change);
             else
-                change(keys);
+                Change(keys);
             break;
 
         case Action::Delete:
@@ -194,30 +230,11 @@ void VimTextEdit::keyPressEvent(QKeyEvent* event)
             
         default:
             break;
-
     }
-
-    // resetting count after action done
-    if (m_count > 1)
-        updateCount('1');
-    // if (m_command == Action::Change)
-    //     change();
-    // else if (m_command == Action::Delete)
-    //     return; // TODO
 }
 
-void VimTextEdit::change(QKeyCombination key)
+void VimTextEdit::Change(QKeyCombination key)
 {
-    // if (normalMode())
-    //     Move(key, QTextCursor::KeepAnchor);
-
-    // auto tCursor = textCursor();
-    // tCursor.movePosition(normalMode() ? MoveDir::Left : MoveDir::Right, QTextCursor::KeepAnchor);
-    // tCursor.removeSelectedText();
-    // setTextCursor(tCursor);
-
-    // updateMode(Mode::INSERT);
-    // updateCommand(Action::None);
     Delete(key);
     updateMode(Mode::INSERT);
 }
@@ -230,7 +247,6 @@ void VimTextEdit::Delete(QKeyCombination key)
     auto tCursor = textCursor();
     if (!normalMode())
         tCursor.movePosition(MoveDir::Right, QTextCursor::KeepAnchor);
-    // tCursor.movePosition(normalMode() ? MoveDir::Left : MoveDir::Right, QTextCursor::KeepAnchor);
     tCursor.removeSelectedText();
     setTextCursor(tCursor);
 
@@ -245,7 +261,7 @@ void VimTextEdit::updateCount(QChar countChar)
     if (m_count != countChar.digitValue())
     {
         m_count = countChar.digitValue();
-        emit countChanged("count = " + QString(countChar));
+        emit countChanged("count: " + QString(countChar));
     }
 }
 
@@ -254,7 +270,6 @@ void VimTextEdit::updateCommand(Action command)
     if (command != m_command)
     {
         m_command = command;
-        qDebug() << "command changing to " << commandAsString(command);
         emit commandChanged(commandAsString(command));
     }
 }
@@ -290,8 +305,6 @@ void VimTextEdit::updateMode(Mode mode)
             setCursorWidth(CURSOR_WIDTH_NORMAL);
             break;
     }
-
-    
     // emit mode changed signal
     emit modeChanged("-- " + modeAsString(m_mode) + " --");
 }
@@ -309,16 +322,11 @@ QString VimTextEdit::modeAsString(Mode mode)
 {
     switch (mode)
     {
-        case Mode::INSERT:
-            return "INSERT";
-        case Mode::VISUAL:
-            return "VISUAL";
-        case Mode::VISUAL_LINE:
-            return "VISUAL LINE";
-        case Mode::VISUAL_BLOCK:
-            return "VISUAL BLOCK";
-        default:
-            return "NORMAL";
+        case Mode::INSERT:       return "INSERT";
+        case Mode::VISUAL:       return "VISUAL";
+        case Mode::VISUAL_LINE:  return "VISUAL LINE";
+        case Mode::VISUAL_BLOCK: return "VISUAL BLOCK";
+        default:                 return "NORMAL";
     }
 }
 

@@ -64,7 +64,13 @@
       <property name="leftMargin">
        <number>5</number>
       </property>
+      <property name="topMargin">
+       <number>5</number>
+      </property>
       <property name="rightMargin">
+       <number>5</number>
+      </property>
+      <property name="bottomMargin">
        <number>5</number>
       </property>
       <item>
@@ -91,6 +97,9 @@
         </property>
         <property name="alignment">
          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+        <property name="margin">
+         <number>0</number>
         </property>
        </widget>
       </item>
@@ -128,7 +137,6 @@
    <addaction name="menuFile"/>
    <addaction name="menu_Edit"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="save">
    <property name="icon">
     <iconset>
