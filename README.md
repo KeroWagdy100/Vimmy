@@ -1,6 +1,6 @@
 # Vimmy - A Simple Notepad with Vim Motions
 
-Vimmy is a lightweight notepad application built with **Qt and C++**, featuring **Vim-like motions** for efficient text navigation and editing. It combines the simplicity of a traditional notepad with the power of Vim’s movement commands, making it ideal for users who prefer modal editing in a minimal GUI.
+Vimmy is a lightweight notepad application built with **[Qt](https://doc.qt.io/) and C++**, featuring **[Vim](https://en.wikipedia.org/wiki/Vim_(text_editor))-like motions** for efficient text navigation and editing. It combines the simplicity of a traditional notepad with the power of Vim’s movement commands, making it ideal for users who prefer modal editing in a minimal GUI.
 
 ## ✨ Features
 - Basic Vim motions (`h`, `j`, `k`, `l`, `w`, `b`, `e`, `o`, `O`, `i`, `I`, etc.)
